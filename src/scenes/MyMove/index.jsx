@@ -33,6 +33,7 @@ import { loadLoggedInUser } from 'shared/User/ducks';
 import { loadInternalSchema } from 'shared/Swagger/ducks';
 import FailWhale from 'shared/FailWhale';
 import { no_op } from 'shared/utils';
+import DPSAuthCookie from 'scenes/DPSAuthCookie';
 
 const NoMatch = ({ location }) => (
   <div className="usa-grid">
@@ -88,6 +89,7 @@ export class AppWrapper extends Component {
                     <PrivateRoute path="/moves/:moveId/review/edit-date-and-location" component={EditDateAndLocation} />
                     <PrivateRoute path="/moves/:moveId/review/edit-weight" component={EditWeight} />
                     <PrivateRoute path="/moves/:moveId/request-payment" component={PaymentRequest} />
+                    <PrivateRoute path="/dps_auth/cookie" component={DPSAuthCookie} />
                     <Route component={NoMatch} />
                   </Switch>
                 )}
