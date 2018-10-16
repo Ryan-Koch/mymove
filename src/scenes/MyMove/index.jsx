@@ -9,6 +9,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
 import Alert from 'shared/Alert';
+import Authorization from 'shared/User/Authorization';
 import Feedback from 'scenes/Feedback';
 import Landing from 'scenes/Landing';
 import Shipments from 'scenes/Shipments';
@@ -89,7 +90,7 @@ export class AppWrapper extends Component {
                     <PrivateRoute path="/moves/:moveId/review/edit-date-and-location" component={EditDateAndLocation} />
                     <PrivateRoute path="/moves/:moveId/review/edit-weight" component={EditWeight} />
                     <PrivateRoute path="/moves/:moveId/request-payment" component={PaymentRequest} />
-                    <PrivateRoute path="/dps_auth/cookie" component={DPSAuthCookie} />
+                    <PrivateRoute path="/dps_auth/cookie" component={Authorization(['dps'])(DPSAuthCookie)} />
                     <Route component={NoMatch} />
                   </Switch>
                 )}
