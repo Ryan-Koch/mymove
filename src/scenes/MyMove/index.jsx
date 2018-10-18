@@ -90,7 +90,7 @@ export class AppWrapper extends Component {
                     <PrivateRoute path="/moves/:moveId/review/edit-date-and-location" component={EditDateAndLocation} />
                     <PrivateRoute path="/moves/:moveId/review/edit-weight" component={EditWeight} />
                     <PrivateRoute path="/moves/:moveId/request-payment" component={PaymentRequest} />
-                    <PrivateRoute path="/dps_auth/cookie" component={Authorization(['dps'])(DPSAuthCookie)} />
+                    <PrivateRoute path="/dps_auth/cookie" component={Authorization(DPSAuthCookie, ['dps'])} />
                     <Route component={NoMatch} />
                   </Switch>
                 )}
