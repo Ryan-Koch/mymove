@@ -35,15 +35,15 @@ func (s *Session) IsMyApp() bool {
 }
 
 // DetectorMiddleware detects which application we are serving based on the hostname
-func DetectorMiddleware(logger *zap.Logger, myHostname string, officeHostname string, tspHostname string) func(next http.Handler) http.Handler {
-	logger.Info("Creating host detector", zap.String("myHost", myHostname), zap.String("officeHost", officeHostname), zap.String("tspHost", tspHostname))
+func DetectorMiddleware(logger *zap.Logger, myHostname string, officeHostname string, tspHostname string, sddcHostname string) func(next http.Handler) http.Handler {
+	logger.Info("Creating host detector", zap.String("myHost", myHostname), zap.String("officeHost", officeHostname), zap.String("tspHost", tspHostname), zap.String("sddcHostname", sddcHostname))
 	return func(next http.Handler) http.Handler {
 		mw := func(w http.ResponseWriter, r *http.Request) {
 			_, span := beeline.StartSpan(r.Context(), "DetectorMiddleware")
 			session := SessionFromRequestContext(r)
 			parts := strings.Split(r.Host, ":")
 			var appName application
-			if strings.EqualFold(parts[0], myHostname) {
+			if strings.EqualFold(parts[0], myHostname) || strings.EqualFold(parts[0], sddcHostname) {
 				appName = MyApp
 			} else if strings.EqualFold(parts[0], officeHostname) {
 				appName = OfficeApp

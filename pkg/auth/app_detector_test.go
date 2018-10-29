@@ -13,9 +13,10 @@ import (
 var myMoveMil = "my.move.mil"
 var officeMoveMil = "office.move.mil"
 var tspMoveMil = "tsp.move.mil"
+var sddcArmyMil = "mymove.sddc.army.mil"
 
 func (suite *authSuite) TestMiddlewareConstructor() {
-	adm := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil)
+	adm := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil, sddcArmyMil)
 	suite.NotNil(adm)
 }
 
@@ -29,7 +30,7 @@ func (suite *authSuite) TestMiddleWareMyApp() {
 		suite.False(session.IsTspApp(), "first should not be tspApp")
 		suite.Equal(myMoveMil, session.Hostname)
 	})
-	myMoveMiddleware := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil)(myMoveTestHandler)
+	myMoveMiddleware := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil, sddcArmyMil)(myMoveTestHandler)
 
 	req, _ := http.NewRequest("GET", "/some_url", nil)
 	req.Host = myMoveMil
@@ -48,7 +49,7 @@ func (suite *authSuite) TestMiddleWareMyApp() {
 		suite.False(session.IsTspApp(), "should not be tspApp")
 		suite.Equal(officeMoveMil, session.Hostname)
 	})
-	officeMiddleware := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil)(officeTestHandler)
+	officeMiddleware := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil, sddcArmyMil)(officeTestHandler)
 
 	req, _ = http.NewRequest("GET", "/some_url", nil)
 	req.Host = fmt.Sprintf("%s:8080", officeMoveMil)
@@ -62,17 +63,31 @@ func (suite *authSuite) TestMiddleWareMyApp() {
 		suite.True(session.IsTspApp(), "should be tspApp")
 		suite.Equal(tspMoveMil, session.Hostname)
 	})
-	tspMiddleware := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil)(tspTestHandler)
+	tspMiddleware := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil, sddcArmyMil)(tspTestHandler)
 
 	req, _ = http.NewRequest("GET", "/some_url", nil)
 	req.Host = fmt.Sprintf("%s:8080", tspMoveMil)
 	session = Session{}
 	tspMiddleware.ServeHTTP(rr, req.WithContext(SetSessionInRequestContext(req, &session)))
 
+	sddcTestHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		session := SessionFromRequestContext(r)
+		suite.True(session.IsMyApp(), "should be myApp")
+		suite.False(session.IsOfficeApp(), "should not be officeApp")
+		suite.False(session.IsTspApp(), "should not be tspApp")
+		suite.Equal(sddcArmyMil, session.Hostname)
+	})
+	sddcMiddleware := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil, sddcArmyMil)(sddcTestHandler)
+
+	req, _ = http.NewRequest("GET", "/some_url", nil)
+	req.Host = fmt.Sprintf("%s:8080", sddcArmyMil)
+	session = Session{}
+	sddcMiddleware.ServeHTTP(rr, req.WithContext(SetSessionInRequestContext(req, &session)))
+
 	noAppTestHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		suite.Fail("Should not be called")
 	})
-	noAppMiddleware := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil)(noAppTestHandler)
+	noAppMiddleware := DetectorMiddleware(suite.logger, myMoveMil, officeMoveMil, tspMoveMil, sddcArmyMil)(noAppTestHandler)
 
 	req, _ = http.NewRequest("GET", "/some_url", nil)
 	req.Host = "totally.bogus.hostname"

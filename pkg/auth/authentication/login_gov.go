@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/url"
+	"strings"
 	"time"
 
 	"net/http"
@@ -19,6 +20,7 @@ import (
 const myProviderName = "myProvider"
 const officeProviderName = "officeProvider"
 const tspProviderName = "tspProvider"
+const sddcProviderName = "sddcProvider"
 
 func getLoginGovProviderForRequest(r *http.Request) (*openidConnect.Provider, error) {
 	session := auth.SessionFromRequestContext(r)
@@ -27,6 +29,8 @@ func getLoginGovProviderForRequest(r *http.Request) (*openidConnect.Provider, er
 		providerName = officeProviderName
 	} else if session.IsTspApp() {
 		providerName = tspProviderName
+	} else if strings.HasSuffix(session.Hostname, ".sddc.army.mil") { // TODO: better check
+		providerName = sddcProviderName
 	}
 	gothProvider, err := goth.GetProvider(providerName)
 	if err != nil {
@@ -62,7 +66,7 @@ func (p LoginGovProvider) getOpenIDProvider(hostname string, clientID string, ca
 
 // RegisterProvider registers Login.gov with Goth, which uses
 // auto-discovery to get the OpenID configuration
-func (p LoginGovProvider) RegisterProvider(myHostname string, myClientID string, officeHostname string, officeClientID string, tspHostname string, tspClientID string, callbackProtocol string, callbackPort int) error {
+func (p LoginGovProvider) RegisterProvider(myHostname string, myClientID string, officeHostname string, officeClientID string, tspHostname string, tspClientID string, callbackProtocol string, callbackPort int, sddcHostname string) error {
 
 	myProvider, err := p.getOpenIDProvider(myHostname, myClientID, callbackProtocol, callbackPort)
 	if err != nil {
@@ -70,6 +74,12 @@ func (p LoginGovProvider) RegisterProvider(myHostname string, myClientID string,
 		return err
 	}
 	myProvider.SetName(myProviderName)
+	sddcProvider, err := p.getOpenIDProvider(sddcHostname, myClientID, callbackProtocol, callbackPort)
+	if err != nil {
+		p.logger.Error("getting open_id provider", zap.String("host", sddcHostname), zap.Error(err))
+		return err
+	}
+	sddcProvider.SetName(sddcProviderName)
 	officeProvider, err := p.getOpenIDProvider(officeHostname, officeClientID, callbackProtocol, callbackPort)
 	if err != nil {
 		p.logger.Error("getting open_id provider", zap.String("host", officeHostname), zap.Error(err))
@@ -82,7 +92,7 @@ func (p LoginGovProvider) RegisterProvider(myHostname string, myClientID string,
 		return err
 	}
 	tspProvider.SetName(tspProviderName)
-	goth.UseProviders(myProvider, officeProvider, tspProvider)
+	goth.UseProviders(myProvider, officeProvider, tspProvider, sddcProvider)
 	return nil
 }
 

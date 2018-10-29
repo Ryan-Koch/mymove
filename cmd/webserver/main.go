@@ -104,6 +104,7 @@ func initFlags(flag *pflag.FlagSet) {
 	flag.String("http-tsp-server-name", "tsplocal", "Hostname according to environment.")
 	flag.String("http-orders-server-name", "orderslocal", "Hostname according to environment.")
 	flag.String("http-dps-server-name", "dpslocal", "Hostname according to environment.")
+	flag.String("http-sddc-server-name", "localhost", "Hostname according to envrionment.")
 
 	// Initialize Swagger
 	flag.String("swagger", "swagger/api.yaml", "The location of the public API swagger definition")
@@ -285,6 +286,7 @@ func main() {
 	myHostname := v.GetString("http-my-server-name")
 	officeHostname := v.GetString("http-office-server-name")
 	tspHostname := v.GetString("http-tsp-server-name")
+	sddcHostname := v.GetString("http-sddc-server-name")
 
 	// Register Login.gov authentication provider for My.(move.mil)
 	loginGovProvider := authentication.NewLoginGovProvider(loginGovHostname, loginGovSecretKey, logger)
@@ -296,7 +298,8 @@ func main() {
 		tspHostname,
 		v.GetString("login-gov-tsp-client-id"),
 		loginGovCallbackProtocol,
-		loginGovCallbackPort)
+		loginGovCallbackPort,
+		sddcHostname)
 	if err != nil {
 		logger.Fatal("Registering login provider", zap.Error(err))
 	}
@@ -304,7 +307,7 @@ func main() {
 	// Session management and authentication middleware
 	noSessionTimeout := v.GetBool("no-session-timeout")
 	sessionCookieMiddleware := auth.SessionCookieMiddleware(logger, clientAuthSecretKey, noSessionTimeout)
-	appDetectionMiddleware := auth.DetectorMiddleware(logger, myHostname, officeHostname, tspHostname)
+	appDetectionMiddleware := auth.DetectorMiddleware(logger, myHostname, officeHostname, tspHostname, sddcHostname)
 	userAuthMiddleware := authentication.UserAuthMiddleware(logger)
 
 	handlerContext := handlers.NewHandlerContext(dbConnection, logger)
